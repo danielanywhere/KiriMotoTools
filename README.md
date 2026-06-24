@@ -10,6 +10,14 @@ As one of the few open-source slicing applications that also accommodate full 3D
 
 <p>&nbsp;</p>
 
+NOTE: This is an early version with some limitations. These will gradually be resolved over the coming days.
+
+-   When creating a CAM project, the stock is automatically 10mm wider, 10mm deeper, and the same height as the mesh object.
+-   Tabs are not inserted automatically.
+-   Only AutoPocket and Outline CAM operations have been implemented at this point.
+
+<p>&nbsp;</p>
+
 ## Auto-Pocket
 
 Pocketing is the CAM process of clearing material inside a closed boundary. Most CAM systems struggle to infer clean pocket boundaries, depths, and feature intent from shape data, and because of this, pocketing and contouring information usually needs to be selected manually. When this type of manual selection feature is applied to triangle-mesh surfaces, you might have already found that hundreds or even thousands of those facets have to be selected manually.

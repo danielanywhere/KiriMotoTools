@@ -364,7 +364,7 @@ namespace KiriMotoTools
 								//	overlap of shapes, but there is also a possibility of
 								//	cohabitation.
 								sharedArea = GetSharedArea(comparisonItem, activeItem);
-								if(sharedArea != null)
+								if(sharedArea != null && activeItem.Selected)
 								{
 									activeItem.Selected = false;
 									result++;
@@ -404,10 +404,10 @@ namespace KiriMotoTools
 				activeFaces = faces.FindAll(x => x.Selected);
 				foreach(FaceItem faceItem in activeFaces)
 				{
-					if(
-						faceItem.Vectors[0].Z - surface > -epsilon ||
+					if(faceItem.Selected &&
+						(faceItem.Vectors[0].Z - surface > -epsilon ||
 						faceItem.Vectors[1].Z - surface > -epsilon ||
-						faceItem.Vectors[2].Z - surface > -epsilon)
+						faceItem.Vectors[2].Z - surface > -epsilon))
 					{
 						faceItem.Selected = false;
 						result++;

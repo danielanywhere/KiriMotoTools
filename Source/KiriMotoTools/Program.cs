@@ -139,6 +139,9 @@ namespace KiriMotoTools
 							bShowHelp = true;
 						}
 						break;
+					case "tool":
+						prg.ActionItem.Tool = argItem.Value;
+						break;
 					case "workingpath":
 						prg.ActionItem.WorkingPath = argItem.Value;
 						break;
