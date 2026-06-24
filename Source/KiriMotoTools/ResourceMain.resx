@@ -1325,7 +1325,71 @@
     <comment>Regular expression for finding STL vectors.</comment>
   </data>
   <data name="Syntax" xml:space="preserve">
-    <value>Perform tasks on Kiri:Moto files.</value>
+    <value>Perform tasks on Kiri:Moto files.
+
+Syntax:
+KiriMotoTools /action:{ActionName}
+    [/configfile:{Filename}]
+    [/infile:{Filename}] [/outfile:{Filename}]
+    [/option:{OptionName[,OptionValue]}]
+    [/properties:{NameValueArray}]
+    [/tool:{SelectedToolName}]
+    [/workingpath:{FolderName}]
+    [/wait]
+    [/?]
+
+All parameters can be prefixed with either '/' or '--'.
+
+ * -    Actions marked with an asterisk are only supported within a
+        configuration file.
+
+    /action     -   Describes the action to be made. Following are the
+                    recognized actions, with associated parameter names.
+                    Starred names ('*') are only available in a batch.
+                    AutoPocket - Create a pocket operation on the primary
+                        shape and automatically select all of the eligible
+                        non-through holes. If no tool is selected, #1000
+                        (1/4in end mill) is assumed.
+                        /infile /outfile[ /tool]
+                    Batch - Perform a batch of file operations from a
+                        single JSON configuration file.
+                        /configfile
+                    CreateCAMProject - Create a CAM CNC project.
+                        The input file represents the STL model to load.
+                        The output file represents the Kiri project to save.
+                        /infile /outfile
+                    Outline - Create an outline operation on the primary
+                        shape. If no tool is selected, #1000 (1/4in end mill)
+                        is assumed.
+                        /infile /outfile[ /tool]
+
+{ActionName}    -   Name of the action to execute.
+{Filename}      -   Fully qualified path and filename.
+{Foldername}    -   Fully qualified path.
+
+Example:
+KiriMotoTools /action:AutoPocket
+  /infile:C:\Temp\MyProject.kmz /outfile:C:\Temp\MyProject.kmz
+
+The above example adds an auto-selected pocket operation to the
+MyProject.kmz file.
+
+
+Batch config file variables.
+
+| Name | Command Var | Type | Description |
+|------|-------------|------|-------------|
+| Action | /action | SvgActionTypeEnum | The action to be made on the file. |
+| Actions | (none) | List&lt;SvgActionItem&gt; | Collection of actions to run as a
+part of this action. |
+| InputFilename | /infile | string | The path and filename of the input
+file. |
+| OutputFilename | /outfile | string | The output path and filename for the
+operation. |
+| Properties | List&lt;NameValueItem&gt; | Collection of properties for action. |
+| Tool | /tool | string | Name of the tool selected for the current
+operation. |
+| WorkingPath | /workingpath | string | Working path for current operation. |</value>
     <comment>Command-line syntax and instructions.</comment>
   </data>
 </root>

@@ -118,7 +118,25 @@ namespace KiriMotoTools {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Perform tasks on Kiri:Moto files..
+        ///   Looks up a localized string similar to Perform tasks on Kiri:Moto files.
+        ///
+        ///Syntax:
+        ///KiriMotoTools /action:{ActionName}
+        ///    [/configfile:{Filename}]
+        ///    [/infile:{Filename}] [/outfile:{Filename}]
+        ///    [/option:{OptionName[,OptionValue]}]
+        ///    [/properties:{NameValueArray}]
+        ///    [/tool:{SelectedToolName}]
+        ///    [/workingpath:{FolderName}]
+        ///    [/wait]
+        ///    [/?]
+        ///
+        ///All parameters can be prefixed with either &apos;/&apos; or &apos;--&apos;.
+        ///
+        /// * -    Actions marked with an asterisk are only supported within a
+        ///        configuration file.
+        ///
+        ///    /action     -   Descr [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string Syntax {
             get {
