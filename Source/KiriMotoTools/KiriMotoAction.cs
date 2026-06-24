@@ -143,7 +143,6 @@ namespace KiriMotoTools
 		/// </param>
 		private void AutoPocket(KiriMotoActionItem item)
 		{
-			//string content = "";
 			int count = 0;
 			FaceItem face = null;
 			FaceCollection faces = new FaceCollection();
@@ -273,7 +272,6 @@ namespace KiriMotoTools
 			float height = 0f;
 			string id = "";
 			int index = 0;
-			//MatchCollection matches = null;
 			dynamic widget = null;
 			float width = 0f;
 			dynamic work = null;
@@ -304,17 +302,6 @@ namespace KiriMotoTools
 						vertices = StlReader.ReadStl(fs);
 					}
 
-					//content = File.ReadAllText(
-					//	ActionEngineUtil.AbsolutePath(
-					//		item.WorkingPath, filename));
-					//matches = Regex.Matches(content, ResourceMain.rxStlVector);
-					//foreach(Match matchItem in matches)
-					//{
-					//	vertices.Add(new FVector3(
-					//		ToFloat(ActionEngineUtil.GetValue(matchItem, "x")),
-					//		ToFloat(ActionEngineUtil.GetValue(matchItem, "y")),
-					//		ToFloat(ActionEngineUtil.GetValue(matchItem, "z"))));
-					//}
 					xMax = vertices.Max(x => x.X);
 					xMin = vertices.Min(x => x.X);
 					yMax = vertices.Max(y => y.Y);
@@ -523,126 +510,6 @@ namespace KiriMotoTools
 		}
 		//*-----------------------------------------------------------------------*
 
-
-		////*-----------------------------------------------------------------------*
-		////* ReadFileFromWorkspace																									*
-		////*-----------------------------------------------------------------------*
-		///// <summary>
-		///// Read the file content from the fully qualified workspace path and
-		///// filename.
-		///// </summary>
-		///// <param name="filename">
-		///// Fully qualified path and filename of the workspace to read.
-		///// </param>
-		///// <returns>
-		///// The content of the workspace's workspace.json file.
-		///// </returns>
-		///// <remarks>
-		///// In this version, only workspace.json is read.
-		///// </remarks>
-		//private static string ReadFileFromWorkspace(string filename)
-		//{
-		//	string content = "";
-		//	ZipEntry entry = null;
-		//	ZipFile file = null;
-		//	FileStream fs = null;
-
-		//	if(filename?.Length > 0 && File.Exists(filename))
-		//	{
-		//		try
-		//		{
-		//			fs = File.OpenRead(filename);
-		//			file = new ZipFile(fs);
-		//			foreach(ZipEntry zipEntryItem in file)
-		//			{
-		//				if(zipEntryItem.Name.ToLower() == "workspace.json")
-		//				{
-		//					using(Stream zipStream = file.GetInputStream(zipEntryItem))
-		//					{
-		//						using(StreamReader reader =
-		//							new StreamReader(zipStream, Encoding.UTF8))
-		//						{
-		//							content = reader.ReadToEnd();
-		//							break;
-		//						}
-		//					}
-		//				}
-		//			}
-		//		}
-		//		catch(Exception ex)
-		//		{
-		//			Trace.WriteLine(
-		//				$" Error reading workspace file: {ex.Message}",
-		//				$"{MessageImportanceEnum.Err}");
-		//		}
-		//		finally
-		//		{
-		//			if(file != null)
-		//			{
-		//				file.IsStreamOwner = true;    //	Close underlying streams.
-		//				file.Close();
-		//			}
-		//		}
-		//	}
-		//	return content;
-		//}
-		////*-----------------------------------------------------------------------*
-
-		////*-----------------------------------------------------------------------*
-		////* WriteFileToWorkspace																									*
-		////*-----------------------------------------------------------------------*
-		///// <summary>
-		///// Write the contents of the workspace.json file to the specified
-		///// KiriMoto workspace file.
-		///// </summary>
-		///// <param name="filename">
-		///// Fully qualified path and filename of the KiriMoto KMZ file.
-		///// </param>
-		///// <param name="content">
-		///// The content of the underlying workspace.json data file.
-		///// </param>
-		//private static void WriteFileToWorkspace(string filename, string content)
-		//{
-		//	ZipEntry entry = null;
-
-		//	if(filename?.Length > 0)
-		//	{
-		//		try
-		//		{
-		//			if(File.Exists(filename))
-		//			{
-		//				File.Delete(filename);
-		//			}
-		//			using(FileStream fsOut = File.Create(filename))
-		//			{
-		//				using(ZipOutputStream zipStream = new ZipOutputStream(fsOut))
-		//				{
-		//					//	Compression level (0-9).
-		//					zipStream.SetLevel(3);
-
-		//					entry = new ZipEntry("workspace.json");
-		//					zipStream.PutNextEntry(entry);
-		//					using(StreamWriter writer = new StreamWriter(zipStream))
-		//					{
-		//						writer.Write(content);
-		//						writer.Flush();
-		//					}
-		//					zipStream.Finish();
-		//					Trace.WriteLine(
-		//						$"KiriMoto file written: {Path.GetFileName(filename)}",
-		//						$"{MessageImportanceEnum.Info}");
-		//				}
-		//			}
-		//		}
-		//		catch(Exception ex)
-		//		{
-		//			Trace.WriteLine($"Error writing KiriMoto file: {ex.Message}",
-		//				$"{MessageImportanceEnum.Err}");
-		//		}
-		//	}
-		//}
-		////*-----------------------------------------------------------------------*
-
 		//*-----------------------------------------------------------------------*
 		//* SetRootWorkingDocument																								*
 		//*-----------------------------------------------------------------------*
@@ -678,7 +545,6 @@ namespace KiriMotoTools
 			}
 		}
 		//*-----------------------------------------------------------------------*
-
 
 		//*************************************************************************
 		//*	Protected																															*
