@@ -1,0 +1,3 @@
+kirimototools /wait /action:batch
+  /workingpath:C:\Files
+  /configfile:LinearBearingSideA.json

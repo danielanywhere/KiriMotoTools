@@ -1,0 +1,24 @@
+{
+ "Remark": "KiriMotoTools configuration file for Linear Bearing Side A.",
+ "InputFilename": "Drawings/OpenSCAD/LinearBearingLayer17p932SideA.stl",
+ "OutputFilename": "LinearBearingLayer17p932SideA.kmz",
+ "Action": "TaskList",
+ "Actions":
+ [
+  {
+   "Action": "CreateCAMProject"
+  },
+  {
+   "Action": "AutoPocket",
+   "Tool": "end 2mm"
+  },
+  {
+   "Action": "AutoPocket",
+   "Tool": "ball 1mm"
+  },
+  {
+   "Action": "Outline",
+   "Tool": "end 4mm"
+  }
+ ]
+}

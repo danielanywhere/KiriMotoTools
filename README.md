@@ -14,7 +14,15 @@ As one of the few open-source slicing applications that also accommodate full 3D
 
 Pocketing is the CAM process of clearing material inside a closed boundary. Most CAM systems struggle to infer clean pocket boundaries, depths, and feature intent from shape data, and because of this, pocketing and contouring information usually needs to be selected manually. When this type of manual selection feature is applied to triangle-mesh surfaces, you might have already found that hundreds or even thousands of those facets have to be selected manually.
 
-One of the key attributes of KiriMotoTools is that it has eliminated any need to perform human-supervised pocketing on Kiri:Moto. Using the AutoPocket action, you can update your existing Kiri project file of any complexity with a single command.
+One of the key attributes of KiriMotoTools is that it has eliminated any need to perform human-supervised pocketing on Kiri:Moto. Using the AutoPocket action, you can update your existing Kiri project file of any complexity with a single command similar to the following:
+
+```batch
+kirimototools /wait /action:autopocket "/tool:ball 2mm"
+  /workingpath:C:\Files
+  /infile:KiriMotoMeshCAMProject.kmz
+  /outfile:infile:KiriMotoMeshCAMProject.kmz
+
+```
 
 <p>&nbsp;</p>
 
@@ -92,15 +100,60 @@ Each time you update your design file, you need to perform the following steps.
 
 When you maintain your project with KiriMotoTools, use the following general workflow to create the project.
 
--   Create a small configuration file specifying the STL filename, Kiri filename, operations, and properties.
--   Run the KiriMotoTools command to create the project.
+-   Create a small configuration file specifying the STL filename, Kiri filename, operations, and properties similar to the following:
+
+```batch
+{
+ "Remark": "KiriMotoTools configuration file for Linear Bearing Side A.",
+ "InputFilename": "Drawings/OpenSCAD/LinearBearingLayer17p932SideA.stl",
+ "OutputFilename": "LinearBearingLayer17p932SideA.kmz",
+ "Action": "TaskList",
+ "Actions":
+ [
+  {
+   "Action": "CreateCAMProject"
+  },
+  {
+   "Action": "AutoPocket",
+   "Tool": "end 2mm"
+  },
+  {
+   "Action": "AutoPocket",
+   "Tool": "ball 1mm"
+  },
+  {
+   "Action": "Outline",
+   "Tool": "end 4mm"
+  }
+ ]
+}
+
+```
+
+-   Run the KiriMotoTools command to create the project with a command similar to the following:
+
+```batch
+kirimototools /wait /action:batch
+  /workingpath:C:\Files
+  /configfile:LinearBearingSideA.json
+
+```
+
 -   Click **Slice** to review slicing.
 -   Click **Animate** to review activity.
 -   Click **Export** to generate the .NC file.
 
 Each time you update your design file, perform the following steps.
 
--   Run the command to create the project.
+-   Run the KiriMotoTools command to create the project with a command similar to the following:
+
+```batch
+kirimototools /wait /action:batch
+  /workingpath:C:\Files
+  /configfile:LinearBearingSideA.json
+
+```
+
 -   Click **Slice** to review slicing.
 -   Click **Animate** to review activity.
 -   Click **Export** to generate the .NC file.
@@ -109,7 +162,7 @@ Each time you update your design file, perform the following steps.
 
 ## Summary
 
-Now, you can truly benefit from the 20x design speed increase, as well as the availability of hundreds of free editors in different categories, that freestyle mesh editing affords over traditional constraint-based modeling. The long, tedious design hours and limited collaborativity of constraint-based modeling never have to be a problem again.
+Now, you can truly benefit from the potential 20x design speed increase, as well as the availability of hundreds of free editors in different categories, that freestyle mesh editing affords over traditional constraint-based modeling. The long, tedious design hours and limited collaborativity of constraint-based modeling never have to be a restriction to your productivity again.
 
 <p>&nbsp;</p>
 
