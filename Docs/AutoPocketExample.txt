@@ -1,4 +1,4 @@
 kirimototools /wait /action:autopocket "/tool:ball 2mm"
   /workingpath:C:\Files
   /infile:KiriMotoMeshCAMProject.kmz
-  /outfile:infile:KiriMotoMeshCAMProject.kmz
+  /outfile:KiriMotoMeshCAMProject.kmz

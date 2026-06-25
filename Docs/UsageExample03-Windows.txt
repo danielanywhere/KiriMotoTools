@@ -1,0 +1,8 @@
+cd Downloads
+git clone https://github.com/danielanywhere/KiriMotoTools
+cd KiriMotoTools/Source/KiriMotoTools
+dotnet publish ./KiriMotoTools.csproj -r win-x64 -c Release
+cd bin/Release/net8.0/win-x64/publish
+KiriMotoTools
+
+

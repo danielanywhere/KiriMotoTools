@@ -28,7 +28,7 @@ One of the key attributes of KiriMotoTools is that it has eliminated any need to
 kirimototools /wait /action:autopocket "/tool:ball 2mm"
   /workingpath:C:\Files
   /infile:KiriMotoMeshCAMProject.kmz
-  /outfile:infile:KiriMotoMeshCAMProject.kmz
+  /outfile:KiriMotoMeshCAMProject.kmz
 
 ```
 
@@ -178,4 +178,15 @@ Now, you can truly benefit from the potential 20x design speed increase, as well
 
 This is a .NET managed console application that runs on Linux, macOS, and Windows.
 
-More information about installing and running on your platform is coming within the next couple of days.
+Please read the [**Docs/CommandLineSyntax.txt**](Docs/CommandLineSyntax.txt) file for more information. You can also get some sample ideas from [**Docs/CommandLines.md**](Docs/CommandLines.md).
+
+On any system with .NET Core SDK 8 or greater installed, you can get the project and run it initially using the following commands.
+
+```batch
+git clone https://github.com/danielanywhere/KiriMotoTools
+cd KiriMotoTools/Source/KiriMotoTools
+dotnet run -- /? /wait
+
+```
+
+A full description of compiling and running SvgTools on your PC is also available at [**Docs/BuildingAndRunningKiriMotoTools.md**](Docs/BuildingAndRunningKiriMotoTools.md).
