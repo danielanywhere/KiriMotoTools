@@ -78,6 +78,9 @@ namespace KiriMotoTools
 		/// Append the auto-pocket operation details to the loaded workspace
 		/// structure.
 		/// </summary>
+		/// <param name="item">
+		/// Reference to the action item containing processing information.
+		/// </param>
 		/// <param name="json">
 		/// Reference to the workspace.json structure to which the new pocket
 		/// operation will be appended.
@@ -85,27 +88,76 @@ namespace KiriMotoTools
 		/// <param name="surfaceName">
 		/// Name of the surface to record.
 		/// </param>
-		/// <param name="toolName">
-		/// Name of the tool to assign.
-		/// </param>
 		/// <param name="selectedFaceIndices">
 		/// Reference to the collection of selected face indices.
 		/// </param>
-		private static void AppendAutoPocket(dynamic json,
-			string surfaceName, string toolName, List<int> selectedFaceIndices)
+		private static void AppendAutoPocket(KiriMotoActionItem item,
+			dynamic json, string surfaceName, List<int> selectedFaceIndices)
 		{
 			dynamic newOp = null;
+			//ActionOptionItem option = null;
+			//List<ActionOptionItem> options = null;
+			NameValueItem property = null;
 			dynamic surfaces = null;
+			string text = "";
 
-			if(json != null && selectedFaceIndices != null)
+			if(item != null && json != null && selectedFaceIndices != null)
 			{
 				newOp = new JObject();
 				newOp.type = "pocket";
-				newOp.direction = "climb";
-				newOp.spindle = 10000;
-				newOp.tool = GetToolId(json, toolName);
-				newOp.step = 0.25f;
-				newOp.down = 0.25f;
+				property =
+					item.Properties.FirstOrDefault(p =>
+						p.Name.ToLower() == "millingstyle");
+				if(property?.Value != null)
+				{
+					text = property.Value.ToLower();
+				}
+				else
+				{
+					text = "";
+				}
+				switch(text)
+				{
+					case "climb":
+					case "conventional":
+						newOp.direction = text;
+						break;
+					default:
+						newOp.direction = "climb";
+						break;
+				}
+				property =
+					item.Properties.FirstOrDefault(p =>
+						p.Name.ToLower() == "spindle");
+				if(property != null)
+				{
+					newOp.spindle = ActionEngineUtil.ToInt(property.Value);
+				}
+				else
+				{
+					newOp.spindle = 10000;
+				}
+				newOp.tool = GetToolId(json, item.Tool);
+				property =
+					item.Properties.FirstOrDefault(p => p.Name.ToLower() == "stepover");
+				if(property != null)
+				{
+					newOp.step = ToFloat(property.Value);
+				}
+				else
+				{
+					newOp.step = 0.25f;
+				}
+				property =
+					item.Properties.FirstOrDefault(p => p.Name.ToLower() == "stepdown");
+				if(property != null)
+				{
+					newOp.down = ToFloat(property.Value);
+				}
+				else
+				{
+					newOp.down = 0.25f;
+				}
 				newOp.rate = 1100;
 				newOp.plunge = 200;
 				newOp.expand = 0;
@@ -202,7 +254,7 @@ namespace KiriMotoTools
 					$"{MessageImportanceEnum.Info}");
 				selectedFaces = FaceCollection.GetSelectedIndices(faces);
 				//	Create an operation.
-				AppendAutoPocket(json, surfaceName, item.Tool, selectedFaces);
+				AppendAutoPocket(item, json, surfaceName, selectedFaces);
 				if(item.WorkingDocument != null &&
 					item.WorkingDocument is KiriMotoZipDocumentItem kiriMotoDocument)
 				{
@@ -223,7 +275,14 @@ namespace KiriMotoTools
 		/// </param>
 		private void CreateCAMProject(KiriMotoActionItem item)
 		{
+			dynamic cdev = null;
+			dynamic cnc = null;
+			object configValue = null;
+			dynamic device = null;
+			float floatValue = 0f;
+			int intValue = 0;
 			KiriMotoZipDocumentItem kiriMotoDocument = null;
+			Dictionary<string, object> machineConfig = null;
 
 			if(item != null && item.OutputFilename?.Length > 0)
 			{
@@ -233,6 +292,65 @@ namespace KiriMotoTools
 						item.WorkingPath, item.OutputFilename)
 				};
 				kiriMotoDocument.Json = JObject.Parse(ResourceMain.BlankWorkspace);
+				device = kiriMotoDocument.Json.settings.device;
+				cdev = kiriMotoDocument.Json.settings.cdev.CAM;
+				cnc = kiriMotoDocument.Json.settings.devices["Grbl CNC"];
+				machineConfig = item.MachineConfig;
+				if(machineConfig.Count > 0)
+				{
+					Trace.WriteLine("Machine settings specified...",
+						$"{MessageImportanceEnum.Info}");
+					if(machineConfig.ContainsKey("BedX"))
+					{
+						floatValue = ToFloat(machineConfig["BedX"]);
+						if(floatValue > 0f)
+						{
+							device.bedWidth = floatValue;
+							cdev.bedWidth = floatValue;
+							cnc.bedWidth = floatValue;
+						}
+					}
+					if(machineConfig.ContainsKey("BedY"))
+					{
+						floatValue = ToFloat(machineConfig["BedY"]);
+						if(floatValue > 0f)
+						{
+							device.bedDepth = floatValue;
+							cdev.bedDepth = floatValue;
+							cnc.bedDepth = floatValue;
+						}
+					}
+					if(machineConfig.ContainsKey("BedZ"))
+					{
+						floatValue = ToFloat(machineConfig["BedZ"]);
+						if(floatValue > 0f)
+						{
+							device.maxHeight = floatValue;
+							cdev.maxHeight = floatValue;
+							cnc.maxHeight = floatValue;
+						}
+					}
+					if(machineConfig.ContainsKey("MaxSpindle"))
+					{
+						intValue = ActionEngineUtil.ToInt(machineConfig["MaxSpindle"]);
+						if(intValue > 0)
+						{
+							device.spindleMax = intValue;
+							cdev.spindleMax = intValue;
+							cnc.spindleMax = intValue;
+						}
+					}
+					if(machineConfig.ContainsKey("ToolChangeCodes"))
+					{
+						configValue = machineConfig["ToolChangeCodes"];
+						if(configValue is JArray)
+						{
+							device.gcodeChange = (JArray)configValue;
+							cdev.gcodeChange = (JArray)configValue;
+							cnc.gcodeChange = (JArray)configValue;
+						}
+					}
+				}
 				kiriMotoDocument.Modified = true;
 				SetRootWorkingDocument(item, kiriMotoDocument);
 				Trace.WriteLine("New CAM project created.",
@@ -471,7 +589,10 @@ namespace KiriMotoTools
 		{
 			dynamic json = null;
 			dynamic newOp = null;
+			//ActionOptionItem option = null;
+			NameValueItem property = null;
 			dynamic surfaces = null;
+			string text = "";
 
 			if(item != null)
 			{
@@ -482,11 +603,51 @@ namespace KiriMotoTools
 					newOp = new JObject();
 					newOp.type = "outline";
 					newOp.tool = GetToolId(json, item.Tool);
-					newOp.direction = "climb";
-					newOp.spindle = 10000;
+					property =
+						item.Properties.FirstOrDefault(p =>
+							p.Name.ToLower() == "millingstyle");
+					if(property?.Value != null)
+					{
+						text = property.Value.ToLower();
+					}
+					else
+					{
+						text = "";
+					}
+					switch(text)
+					{
+						case "climb":
+						case "conventional":
+							newOp.direction = text;
+							break;
+						default:
+							newOp.direction = "climb";
+							break;
+					}
+					property =
+						item.Properties.FirstOrDefault(p =>
+							p.Name.ToLower() == "spindle");
+					if(property != null)
+					{
+						newOp.spindle = ActionEngineUtil.ToInt(property.Value);
+					}
+					else
+					{
+						newOp.spindle = 10000;
+					}
 					newOp.step = 0.4f;
 					newOp.steps = 1;
-					newOp.down = 0.5f;
+					property =
+						item.Properties.FirstOrDefault(p =>
+							p.Name.ToLower() == "stepdown");
+					if(property != null)
+					{
+						newOp.down = ToFloat(property.Value);
+					}
+					else
+					{
+						newOp.down = 0.5f;
+					}
 					newOp.rate = 1100;
 					newOp.plunge = 200;
 					newOp.dogbones = false;
@@ -505,6 +666,55 @@ namespace KiriMotoTools
 					((JArray)json.settings.sproc.CAM["default"].ops).Insert(
 						json.settings.sproc.CAM["default"].ops.Count - 1, newOp);
 
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* ReportGCodeOverLap																										*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Read a g-code file and report overlap on tool paths.
+		/// </summary>
+		/// <param name="item">
+		/// Reference to the active action item.
+		/// </param>
+		private static void ReportGCodeOverLap(KiriMotoActionItem item)
+		{
+			int index = 0;
+			GCodeProcessor processor = null;
+			List<GCodeVectorItem> vectors = null;
+
+			if(item != null &&
+				CheckElements(item, ActionElementEnum.InputFilename))
+			{
+				using(FileStream reader = File.OpenRead(item.InputFiles[0].FullName))
+				{
+					processor = GCodeProcessor.Parse(reader);
+				}
+				if(processor != null)
+				{
+					Trace.WriteLine("Please wait. Processing redundant tracks...",
+						$"{MessageImportanceEnum.Info}");
+					vectors = processor.GetRedundantTracks();
+					Trace.WriteLine(
+						$"{vectors.Count} redundant tracks found at the following lines:",
+						$"{MessageImportanceEnum.Info}");
+					foreach(GCodeVectorItem vectorItem in vectors)
+					{
+						if(index > 0 && vectorItem.Action != null &&
+							vectorItem.Action.Line != null)
+						{
+							Trace.Write(',');
+						}
+						if(vectorItem.Action != null && vectorItem.Action.Line != null)
+						{
+							Trace.Write(vectorItem.Action.Line.LineIndex.ToString());
+						}
+						index++;
+					}
+					Trace.WriteLine("");
 				}
 			}
 		}
@@ -570,6 +780,9 @@ namespace KiriMotoTools
 				case "outline":
 					Outline(this);
 					break;
+				case "reportgcodeoverlap":
+					ReportGCodeOverLap(this);
+					break;
 				case "tasklist":
 					await ListActions(this);
 					break;
@@ -602,6 +815,38 @@ namespace KiriMotoTools
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//*	MachineConfig																													*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="MachineConfig">MachineConfig</see>.
+		/// </summary>
+		private Dictionary<string, object> mMachineConfig =
+			new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+		/// <summary>
+		/// Get a reference to the machine configuration information at this level.
+		/// </summary>
+		/// <remarks>
+		/// This property is inheritable.
+		/// </remarks>
+		public Dictionary<string, object> MachineConfig
+		{
+			get
+			{
+				Dictionary<string, object> result = mMachineConfig;
+
+				if(result.Count == 0)
+				{
+					if(Parent?.Parent != null)
+					{
+						result = Parent.Parent.MachineConfig;
+					}
+				}
+				return result;
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//* Tool																																	*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -611,6 +856,9 @@ namespace KiriMotoTools
 		/// <summary>
 		/// Get/Set the name of the tool to use for the current operation.
 		/// </summary>
+		/// <remarks>
+		/// This property is inheritable.
+		/// </remarks>
 		public string Tool
 		{
 			get

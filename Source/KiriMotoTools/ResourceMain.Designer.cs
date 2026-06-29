@@ -109,6 +109,24 @@ namespace KiriMotoTools {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to (?i:(?&lt;code&gt;[A-Z])(?&lt;value&gt;-{0,1}\d+(\.\d+){0,1})).
+        /// </summary>
+        internal static string rxGCodeLine {
+            get {
+                return ResourceManager.GetString("rxGCodeLine", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to (?&lt;numeric&gt;-{0,1}\d+(\.\d+){0,1}).
+        /// </summary>
+        internal static string rxNumeric {
+            get {
+                return ResourceManager.GetString("rxNumeric", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to (?s:(?i:outer\s+loop\s+vertex\s+(?&lt;x&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+(?&lt;y&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+(?&lt;z&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+)).
         /// </summary>
         internal static string rxStlVector {

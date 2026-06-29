@@ -74,6 +74,7 @@ namespace KiriMotoTools
 			{
 				"AutoPocket",
 				"CreateCAMProject",
+				"ReportGCodeOverlap",
 				"TaskList",
 				"Outline"
 			});

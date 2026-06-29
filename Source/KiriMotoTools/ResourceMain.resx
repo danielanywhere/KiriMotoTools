@@ -201,7 +201,49 @@
 				"flute_diam": 1,
 				"flute_len": 4,
 				"taper_tip": 0,
-				"order": 15,
+				"order": 3,
+				"taper_angle": 0
+			},
+			{
+				"id": 1780949655000,
+				"number": 20,
+				"type": "ballmill",
+				"name": "ball 2mm",
+				"metric": true,
+				"shaft_diam": 3,
+				"shaft_len": 38,
+				"flute_diam": 2,
+				"flute_len": 6,
+				"taper_tip": 0,
+				"order": 4,
+				"taper_angle": 0
+			},
+			{
+				"id": 1782413000000,
+				"number": 17,
+				"type": "ballmill",
+				"name": "ball 3mm",
+				"metric": true,
+				"shaft_diam": 3,
+				"shaft_len": 50,
+				"flute_diam": 3,
+				"flute_len": 12,
+				"taper_tip": 0,
+				"order": 5,
+				"taper_angle": 0
+			},
+			{
+				"id": 1780700987000,
+				"number": 19,
+				"type": "ballmill",
+				"name": "ball 3.175mm",
+				"metric": true,
+				"shaft_diam": 3.175,
+				"shaft_len": 50,
+				"flute_diam": 3.175,
+				"flute_len": 12,
+				"taper_tip": 0,
+				"order": 6,
 				"taper_angle": 0
 			},
 			{
@@ -215,7 +257,7 @@
 				"flute_diam": 4,
 				"flute_len": 12,
 				"taper_tip": 0,
-				"order": 3,
+				"order": 7,
 				"taper_angle": 0
 			},
 			{
@@ -229,7 +271,7 @@
 				"flute_diam": 0.25,
 				"flute_len": 2,
 				"taper_tip": 0,
-				"order": 4
+				"order": 8
 			},
 			{
 				"id": 1005,
@@ -242,7 +284,7 @@
 				"flute_diam": 0.125,
 				"flute_len": 1.5,
 				"taper_tip": 0,
-				"order": 5
+				"order": 9
 			},
 			{
 				"id": 1002,
@@ -255,7 +297,7 @@
 				"flute_diam": 0.0625,
 				"flute_len": 1.5,
 				"taper_tip": 0,
-				"order": 6,
+				"order": 10,
 				"taper_angle": 0
 			},
 			{
@@ -269,7 +311,7 @@
 				"flute_diam": 0.25,
 				"flute_len": 2,
 				"taper_tip": 0,
-				"order": 7
+				"order": 11
 			},
 			{
 				"id": 1001,
@@ -282,7 +324,7 @@
 				"flute_diam": 0.125,
 				"flute_len": 1.5,
 				"taper_tip": 0,
-				"order": 8
+				"order": 12
 			},
 			{
 				"id": 1780690642469,
@@ -295,7 +337,7 @@
 				"flute_diam": 1,
 				"flute_len": 4,
 				"taper_tip": 0,
-				"order": 9,
+				"order": 13,
 				"taper_angle": 0
 			},
 			{
@@ -309,7 +351,7 @@
 				"flute_diam": 2,
 				"flute_len": 11.5,
 				"taper_tip": 0,
-				"order": 10,
+				"order": 14,
 				"taper_angle": 0
 			},
 			{
@@ -323,7 +365,21 @@
 				"flute_diam": 3,
 				"flute_len": 12,
 				"taper_tip": 0,
-				"order": 11,
+				"order": 15,
+				"taper_angle": 0
+			},
+			{
+				"id": 1780700986500,
+				"number": 18,
+				"type": "endmill",
+				"name": "end 3.175mm",
+				"metric": true,
+				"shaft_diam": 3.175,
+				"shaft_len": 50,
+				"flute_diam": 3.175,
+				"flute_len": 12,
+				"taper_tip": 0,
+				"order": 16,
 				"taper_angle": 0
 			},
 			{
@@ -337,7 +393,7 @@
 				"flute_diam": 4,
 				"flute_len": 12,
 				"taper_tip": 0,
-				"order": 12,
+				"order": 17,
 				"taper_angle": 0
 			},
 			{
@@ -351,7 +407,7 @@
 				"flute_diam": 6,
 				"flute_len": 12,
 				"taper_tip": 0,
-				"order": 13,
+				"order": 18,
 				"taper_angle": 0
 			},
 			{
@@ -366,7 +422,7 @@
 				"flute_len": 1.5,
 				"taper_angle": 5.3,
 				"taper_tip": 0,
-				"order": 14
+				"order": 19
 			}
 		],
 		"device": {
@@ -1319,6 +1375,14 @@
 	"time": 1782243892391
 }</value>
     <comment>Blank workspace.json content for a new CAM project.</comment>
+  </data>
+  <data name="rxGCodeLine" xml:space="preserve">
+    <value>(?i:(?&lt;code&gt;[A-Z])(?&lt;value&gt;-{0,1}\d+(\.\d+){0,1}))</value>
+    <comment>Regular expression for reading actions and values on a G-code line.</comment>
+  </data>
+  <data name="rxNumeric" xml:space="preserve">
+    <value>(?&lt;numeric&gt;-{0,1}\d+(\.\d+){0,1})</value>
+    <comment>Regular expression to extract a numeric value.</comment>
   </data>
   <data name="rxStlVector" xml:space="preserve">
     <value>(?s:(?i:outer\s+loop\s+vertex\s+(?&lt;x&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+(?&lt;y&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+(?&lt;z&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+))</value>
