@@ -28,7 +28,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 using ActionEngine;
-using Clipper2Lib;
 
 namespace KiriMotoTools
 {
@@ -182,12 +181,14 @@ namespace KiriMotoTools
 									break;
 								case 6:
 									//	Execute tool change.
-									if(cursor.Comment.Length > 0)
-									{
-										cursor.ToolDiameter = KiriMotoToolsUtil.ToFloat(
-											ActionEngineUtil.GetValue(
-												cursor.Comment, ResourceMain.rxNumeric, "numeric"));
-									}
+									//	In this version, tool diameter is set on a
+									//	line-by-line basis.
+									//if(cursor.Comment.Length > 0)
+									//{
+									//	cursor.ToolDiameter = KiriMotoToolsUtil.ToFloat(
+									//		ActionEngineUtil.GetValue(
+									//			cursor.Comment, ResourceMain.rxNumeric, "numeric"));
+									//}
 									cursor.Action = null;
 									break;
 								case 7:
@@ -237,6 +238,67 @@ namespace KiriMotoTools
 				}
 				cursor.Parameters.Clear();
 			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* InterpolatePath																												*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Interpolate the points in the line between the start and end vertices.
+		/// </summary>
+		/// <param name="start">
+		/// Start vertex.
+		/// </param>
+		/// <param name="end">
+		/// End vertex.
+		/// </param>
+		/// <returns>
+		/// Reference to the list of vertices along the line.
+		/// </returns>
+		private static List<IVector3> InterpolatePath(IVector3 start,
+			IVector3 end)
+		{
+			int distance = 0;
+			int index = 0;
+			List<IVector3> result = new List<IVector3>();
+			int distX = 0;
+			int distY = 0;
+			int distZ = 0;
+
+			if(start != null && end != null)
+			{
+				distX = end.X - start.X;
+				distY = end.Y - start.Y;
+				distZ = end.Z - start.Z;
+				distance = (int)Math.Sqrt(
+					(double)(distX * distX) +
+					(double)(distY * distY) +
+					(double)(distZ * distZ));
+
+				if(distance > 0)
+				{
+					for(index = 0; index <= distance; index++)
+					{
+						result.Add(new IVector3()
+						{
+							X = start.X + ((index * distX) / distance),
+							Y = start.Y + ((index * distY) / distance),
+							Z = start.Z + ((index * distZ) / distance)
+						});
+					}
+				}
+				else
+				{
+					result.Add(new IVector3()
+					{
+						X = start.X,
+						Y = start.Y,
+						Z = start.Z
+					});
+				}
+			}
+			return result;
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -302,18 +364,6 @@ namespace KiriMotoTools
 		//*	Public																																*
 		//*************************************************************************
 		//*-----------------------------------------------------------------------*
-		//* FindRedundantTracks																										*
-		//*-----------------------------------------------------------------------*
-		/// <summary>
-		/// Find all redundant tracks in the data.
-		/// </summary>
-		public void FindRedundantTracks()
-		{
-
-		}
-		//*-----------------------------------------------------------------------*
-
-		//*-----------------------------------------------------------------------*
 		//* GetRedundantTracks																										*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -325,162 +375,75 @@ namespace KiriMotoTools
 		/// </returns>
 		public List<GCodeVectorItem> GetRedundantTracks()
 		{
-			bool bFound = false;
-			int count = 0;
-			double finishArea = 0d;
-			//int focusCount = 0;
-			//int focusIndex = 0;
-			//GCodeVectorItem focusVector = null;
-			int index = 0;
-			Paths64 intersection = null;
-			double intersectionArea = 0d;
-			int localCount = 0;
-			//List<float> levels = null;
-			Paths64 minkowski = null;
-			List<Paths64> minkowskies = new List<Paths64>();
-			int percentage = 0;
+			float multiplier = 0f;
+			int occupiedCount = 0;
+			HashSet<VoxelKey> occupiedKeys = new HashSet<VoxelKey>();
+			int offsetX = 0;
+			int offsetY = 0;
+			int offsetZ = 0;
+			List<IVector3> pathPoints = null;
+			IVector3 previousVoxel = null;
 			List<GCodeVectorItem> result = new List<GCodeVectorItem>();
-			int testCount = 0;
-			int testIndex = 0;
-			List<GCodeToolShapeItem> testShapes = null;
-			GCodeVectorItem testVector = null;
-			int toolCount = 0;
-			int toolIndex = 0;
-			float toolDiameter = 0f;
-			float toolDiameterLast = 0f;
-			List<float> toolDiameters = new List<float>();
-			GCodeToolShapeItem toolShape = null;
-			List<GCodeToolShapeItem> toolShapes = new List<GCodeToolShapeItem>();
-			GCodeVectorItem vector = null;
-			List<GCodeVectorItem> vectors = null;
+			int toolRadius = 0;
+			int visitCount = 0;
+			VoxelKey visitKey;
 
-			//levels = ZLevels.Select(z => z.Level).ToList();
-			foreach(GCodeLevelItem levelItem in mZLevels)
+			if(GCodeVectorItem.VoxelPrecision != 0f)
 			{
-				Trace.WriteLine(
-					$"Get redundant tracks at level: {levelItem.Level:0.###}",
-					$"{MessageImportanceEnum.Info}");
-				toolShapes.Clear();
-				localCount = 0;
-				vectors = levelItem.Vectors;
-				count = vectors.Count;
-				toolDiameters.Clear();
-				toolDiameter = 0f;
-				toolDiameterLast = 0f;
-				for(index = 0; index < count; index ++)
+				multiplier = 1f / GCodeVectorItem.VoxelPrecision;
+			}
+			foreach(GCodeVectorItem vectoritem in mVectors)
+			{
+				if(previousVoxel != null && vectoritem.PenDown)
 				{
-					vector = vectors[index];
-					toolDiameter = vector.ToolDiameter;
-					if(toolDiameter != toolDiameterLast)
+					toolRadius =
+						(int)Math.Ceiling((vectoritem.ToolDiameter * multiplier) / 2f);
+					pathPoints = InterpolatePath(previousVoxel, vectoritem.Voxel);
+					occupiedCount = 0;
+					visitCount = 0;
+					foreach(IVector3 pointItem in pathPoints)
 					{
-						if(!toolDiameters.Contains(toolDiameter))
+						for(offsetX = -toolRadius; offsetX <= toolRadius; offsetX++)
 						{
-							toolDiameters.Add(toolDiameter);
-						}
-					}
-					toolDiameterLast = toolDiameter;
-				}
-				foreach(float toolDiameterItem in toolDiameters)
-				{
-					toolShape = new GCodeToolShapeItem()
-					{
-						ToolDiameter = toolDiameterItem
-					};
-					toolShape.StartingIndex =
-						vectors.FindIndex(t => t.ToolDiameter == toolDiameterItem);
-					toolShape.EndingIndex =
-						vectors.FindLastIndex(t => t.ToolDiameter == toolDiameterItem);
-					toolShapes.Add(toolShape);
-				}
-				minkowskies.Clear();
-				foreach(GCodeToolShapeItem toolShapeItem in toolShapes)
-				{
-					for(index = toolShapeItem.StartingIndex;
-						index <= toolShapeItem.EndingIndex; index ++)
-					{
-						vector = vectors[index];
-						if(vector.Minkowski != null)
-						{
-							//	If this vector has a Minkowski, it has an active segment
-							//	in the current tool.
-							minkowskies.Add(vector.Minkowski);
-						}
-						else
-						{
-							//	When this item doesn't have a Minkowski, it is not
-							//	a member of a segment. Any existing shape is finished.
-							if(minkowskies.Count > 0)
+							for(offsetY = -toolRadius; offsetY <= toolRadius; offsetY++)
 							{
-								minkowski = new Paths64();
-								foreach(Paths64 shapeItem in minkowskies)
-								{
-									minkowski.AddRange(shapeItem);
-								}
-								toolShapeItem.Minkowskies.Add(minkowski);
-							}
-							minkowskies.Clear();
-						}
-					}
-					if(minkowskies.Count > 0)
-					{
-						minkowski = new Paths64();
-						foreach(Paths64 shapeItem in minkowskies)
-						{
-							minkowski.AddRange(shapeItem);
-						}
-						toolShapeItem.Minkowskies.Add(minkowski);
-					}
-					minkowskies.Clear();
-				}
-				foreach(GCodeToolShapeItem toolShapeItem in toolShapes)
-				{
-					foreach(Paths64 minkowskiItem in toolShapeItem.Minkowskies)
-					{
-						minkowski = Clipper.Union(minkowskiItem, FillRule.NonZero);
-						minkowski = Clipper.SimplifyPaths(minkowski, 0.001d);
-						toolShapeItem.Shapes.Add(minkowski);
-					}
-				}
-				//	TODO: Place each track in each of the pools not participating
-				//	in that tool's diameter.
-				toolCount = toolShapes.Count;
-				for(toolIndex = toolCount - 1; toolIndex > 0; toolIndex --)
-				{
-					toolShape = toolShapes[toolIndex];
-					testShapes = toolShapes.Skip(0).Take(toolIndex).ToList();
-					for(index = toolShape.EndingIndex;
-						index >= toolShape.StartingIndex; index --)
-					{
-						vector = vectors[index];
-						bFound = false;
-						if(vector.Minkowski != null)
-						{
-							foreach(GCodeToolShapeItem shapeItem in testShapes)
-							{
-								foreach(Paths64 minkowskiItem in shapeItem.Shapes)
-								{
-									intersection = Clipper.Intersect(
-										vector.Minkowski, minkowskiItem, FillRule.NonZero);
-									intersectionArea = Clipper.Area(intersection);
-									finishArea = Clipper.Area(vector.Minkowski);
-									if(Math.Abs(finishArea - intersectionArea) < 0.01d)
+								//for(offsetZ = 0; offsetZ <= toolRadius; offsetZ++)
+								//{
+									if((offsetX * offsetX) +
+										(offsetY * offsetY) +
+										(offsetZ * offsetZ) <= (toolRadius * toolRadius))
 									{
-										result.Add(vector);
-										localCount++;
-										bFound = true;
-										break;
+										visitCount++;
+										visitKey = new VoxelKey(
+											pointItem.X + offsetX,
+											pointItem.Y + offsetY,
+											pointItem.Z + offsetZ);
+										if(occupiedKeys.Contains(visitKey))
+										{
+											occupiedCount++;
+										}
+										else
+										{
+											occupiedKeys.Add(visitKey);
+										}
 									}
-								}
-								if(bFound)
-								{
-									break;
-								}
+								//}
 							}
 						}
 					}
+					//if(visitCount > 0 &&
+					//	((float)occupiedCount / (float)visitCount) > 0.9f)
+					//{
+					//	//	This track is completely redundant.
+					//	result.Add(vectoritem);
+					//}
+					if(visitCount > 0 && occupiedCount == visitCount)
+					{
+						//	This track is completely redundant.
+						result.Add(vectoritem);
+					}
 				}
-				percentage = (int)(((float)localCount / (float)count) * 100f);
-				Trace.WriteLine($"      {localCount} of {count} ({percentage}%)");
+				previousVoxel = vectoritem.Voxel;
 			}
 			return result;
 		}
@@ -509,17 +472,31 @@ namespace KiriMotoTools
 			MatchCollection matches = null;
 			string number = "";
 			string tu = "";
-			List<GCodeVectorItem> vectors = null;
 
-			mZLevels.Clear();
 			foreach(string lineItem in mLines)
 			{
-				cursor.Line = new GCodeLineItem()
+				cursor.LineItem = new GCodeLineItem()
 				{
 					LineIndex = lineIndex,
 					Value = lineItem
 				};
 				tu = lineItem.ToUpper();
+				//	Update tool diameter.
+				match = Regex.Match(lineItem, ResourceMain.rxToolDiameter);
+				if(match.Success)
+				{
+					cursor.ToolDiameter =
+						KiriMotoToolsUtil.ToFloat(
+							ActionEngineUtil.GetValue(match, "diameter"));
+				}
+				//	Update safe height.
+				match = Regex.Match(lineItem, ResourceMain.rxSafeHeight);
+				if(match.Success)
+				{
+					cursor.SafeHeight =
+						KiriMotoToolsUtil.ToFloat(
+							ActionEngineUtil.GetValue(match, "height"));
+				}
 				//	Process and remove comment.
 				cursor.Comment = "";
 				match = Regex.Match(lineItem, @";(?<comment>.*)");
@@ -556,7 +533,7 @@ namespace KiriMotoTools
 							}
 							cursor.Action = new GCodeActionItem()
 							{
-								Line = cursor.Line,
+								LineItem = cursor.LineItem,
 								ActionType = GCodeActionItem.GetActionType(code),
 								ActionIndex = ActionEngineUtil.ToInt(number)
 							};
@@ -608,17 +585,10 @@ namespace KiriMotoTools
 				}
 				lastZ = vectorItem.Vertex.Z;
 			}
-			//	Disconnect diagonal segments.
-
-			foreach(float levelItem in levels)
-			{
-				vectors = cursor.Vectors.FindAll(z => z.Vertex.Z == levelItem);
-				foreach(GCodeVectorItem vectorItem in vectors)
-				{
-					ZLevels.Add(vectorItem.Action,
-						vectorItem.Vertex, vectorItem.ToolDiameter, vectorItem.PenDown);
-				}
-			}
+			mSafeHeight = cursor.SafeHeight;
+			mVectors.Clear();
+			mVectors.AddRange(cursor.Vectors);
+			GCodeVectorCollection.InitializeVoxels(mVectors);
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -674,18 +644,35 @@ namespace KiriMotoTools
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
-		//*	ZLevels																																*
+		//*	SafeHeight																														*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
-		/// Private member for <see cref="ZLevels">ZLevels</see>.
+		/// Private member for <see cref="SafeHeight">SafeHeight</see>.
 		/// </summary>
-		private GCodeLevelCollection mZLevels = new GCodeLevelCollection();
+		private float mSafeHeight = 1f;
 		/// <summary>
-		/// Get a reference to the list of Z levels in this code.
+		/// Get/Set the safe height of the tool above the stock.
 		/// </summary>
-		public GCodeLevelCollection ZLevels
+		public float SafeHeight
 		{
-			get { return mZLevels; }
+			get { return mSafeHeight; }
+			set { mSafeHeight = value; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	Vectors																																*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="Vectors">Vectors</see>.
+		/// </summary>
+		private GCodeVectorCollection mVectors = new GCodeVectorCollection();
+		/// <summary>
+		/// Get a reference to the collection of vectors at this level.
+		/// </summary>
+		public GCodeVectorCollection Vectors
+		{
+			get { return mVectors; }
 		}
 		//*-----------------------------------------------------------------------*
 

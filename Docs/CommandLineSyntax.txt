@@ -31,10 +31,16 @@ All parameters can be prefixed with either '/' or '--'.
                         The input file represents the STL model to load.
                         The output file represents the Kiri project to save.
                         /infile /outfile
+                    OptimizeGCode - Optimize a G-code file to reduce wasted
+                        effort to a minimum.
+                        /infile /outfile
                     Outline - Create an outline operation on the primary
                         shape. If no tool is selected, #1000 (1/4in end mill)
                         is assumed.
                         /infile /outfile[ /tool]
+                    ReportGCodeOverlap - Read a g-code file and report
+                        overlap on tool paths.
+                        /infile
 
 {ActionName}    -   Name of the action to execute.
 {Filename}      -   Fully qualified path and filename.

@@ -18,6 +18,54 @@ NOTE: This is an early version with some limitations. These will gradually be re
 
 <p>&nbsp;</p>
 
+## 🆕G-Code Redundancy Report and Optimization Tasks
+
+Two new actions have been added to help you experience up to a 95% time and energy savings on your Kiri:Moto CAM CNC jobs.
+
+<p>&nbsp;</p>
+
+### The Issue
+
+The procedure of roughing out any intricate area with bits of decreasing size has long been a popular way to eliminate most of the time that would otherwise be spent waiting, sometimes for days, for the smallest selected bit to trace every square unit of the entire volume, not to mention that the single bit approach could easily wear out multiple bits on a single job.
+
+While the Kiri:Moto CAM CNC mode does offer a roughing action, that particular action is overly eager on clearing surfaces that will be completely removed with outlines.
+
+The CAM CNC mode also easily supports multiple passes using the same Pocket action, and when using this approach with a decreasing list of tools, very few of the tracks from each of the previous actions are counted as fulfilled, leading to a job that, although legitimate in tool selection, takes several times longer to complete than it should by taking an increasing number of no-touch passes as the job wears on.
+
+To verify whether you have multiple wasted tracks, you can run the /action:ReportGCodeOverlap command as shown in the following example.
+
+```batch
+kirimototools /wait /action:reportgcodeoverlap /infile:C:\Temp\MyGCodeFile.nc
+
+```
+
+<p>&nbsp;</p>
+
+### The Workaround
+
+To help you work around this issue, KiriMotoTools now includes a voxel-based volume optimizer that removes any tracks from the file that are purely redundant.
+
+The following tactic is adopted to drastically reduce the number of actions in a typical Kiri:Moto CAM CNC file, or any other variation that tends to output extremely superfluous activities.
+
+-   For each redundant G1 track:
+-   Retract the tool to the safe height.
+-   Move to the next non-redundant X,Y location. Mark as *Current*.
+-   Plunge the tool to the *Current* Z location.
+
+This doesn't create the cleanest possible track layout, mainly because of the noisy retract-and-plunge actions that are created as a result of clean-up, but even with the noise, you will probably experience jobs finishing in 10 minutes that were taking up to 5 hours time.
+
+Use the /action:OptimizeGCode parameter to create a cleaned-up version of your file as shown in the example below.
+
+```batch
+kirimototools /wait /action:optimizegcode
+  /infile:C:\Temp\MyGCodeFile.nc
+  /outfile:C:\Temp\MyGCodeFile-Optimized.nc
+
+
+```
+
+<p>&nbsp;</p>
+
 ## Auto-Pocket
 
 Pocketing is the CAM process of clearing material inside a closed boundary. Most CAM systems struggle to infer clean pocket boundaries, depths, and feature intent from shape data, and because of this, pocketing and contouring information usually needs to be selected manually. When this type of manual selection feature is applied to triangle-mesh surfaces, you might have already found that hundreds or even thousands of those facets have to be selected manually.

@@ -1384,9 +1384,17 @@
     <value>(?&lt;numeric&gt;-{0,1}\d+(\.\d+){0,1})</value>
     <comment>Regular expression to extract a numeric value.</comment>
   </data>
+  <data name="rxSafeHeight" xml:space="preserve">
+    <value>(?i:Safe\s*Height\s*\:\s*(?&lt;height&gt;\d+(\.\d+){0,1}))</value>
+    <comment>Regular expression to extract the safe tool height on a G-code line.</comment>
+  </data>
   <data name="rxStlVector" xml:space="preserve">
     <value>(?s:(?i:outer\s+loop\s+vertex\s+(?&lt;x&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+(?&lt;y&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+(?&lt;z&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+))</value>
     <comment>Regular expression for finding STL vectors.</comment>
+  </data>
+  <data name="rxToolDiameter" xml:space="preserve">
+    <value>(?i:change\s+tool\s+to\s*'[^0-9]*(?&lt;diameter&gt;\d+(\.\d+){0,1}))</value>
+    <comment>Regular expression to extract the current tool diameter from a line.</comment>
   </data>
   <data name="Syntax" xml:space="preserve">
     <value>Perform tasks on Kiri:Moto files.
@@ -1422,10 +1430,16 @@ All parameters can be prefixed with either '/' or '--'.
                         The input file represents the STL model to load.
                         The output file represents the Kiri project to save.
                         /infile /outfile
+                    OptimizeGCode - Optimize a G-code file to reduce wasted
+                        effort to a minimum.
+                        /infile /outfile
                     Outline - Create an outline operation on the primary
                         shape. If no tool is selected, #1000 (1/4in end mill)
                         is assumed.
                         /infile /outfile[ /tool]
+                    ReportGCodeOverlap - Read a g-code file and report
+                        overlap on tool paths.
+                        /infile
 
 {ActionName}    -   Name of the action to execute.
 {Filename}      -   Fully qualified path and filename.

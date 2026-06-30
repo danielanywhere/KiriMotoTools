@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Clipper2" Version="2.0.0" />
     <PackageReference Include="Dans.ActionEngine.Library" Version="26.2224.4542" />
     <PackageReference Include="Dans.StyleAgnosticCommandArgs.Library" Version="26.2118.4210" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

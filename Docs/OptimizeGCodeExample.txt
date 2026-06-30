@@ -1,0 +1,4 @@
+kirimototools /wait /action:optimizegcode
+  /infile:C:\Temp\MyGCodeFile.nc
+  /outfile:C:\Temp\MyGCodeFile-Optimized.nc
+

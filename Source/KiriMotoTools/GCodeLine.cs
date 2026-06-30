@@ -50,7 +50,7 @@ namespace KiriMotoTools
 	//*	GCodeLineItem																														*
 	//*-------------------------------------------------------------------------*
 	/// <summary>
-	/// Information about a raw g-code line.
+	/// Information about a raw g-code text line.
 	/// </summary>
 	public class GCodeLineItem
 	{

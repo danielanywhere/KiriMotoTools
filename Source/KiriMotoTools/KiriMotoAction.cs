@@ -340,6 +340,16 @@ namespace KiriMotoTools
 							cnc.spindleMax = intValue;
 						}
 					}
+					if(machineConfig.ContainsKey("HeaderCodes"))
+					{
+						configValue = machineConfig["HeaderCodes"];
+						if(configValue is JArray)
+						{
+							device.gcodePre = (JArray)configValue;
+							cdev.gcodePre = (JArray)configValue;
+							cnc.gcodePre = (JArray)configValue;
+						}
+					}
 					if(machineConfig.ContainsKey("ToolChangeCodes"))
 					{
 						configValue = machineConfig["ToolChangeCodes"];
@@ -577,6 +587,125 @@ namespace KiriMotoTools
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//* OptimizeGCode																													*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Optimize a G-code file to reduce wasted effort to a minimum.
+		/// </summary>
+		/// <param name="item">
+		/// Reference to the KiriMotoAction to process.
+		/// </param>
+		private static void OptimizeGCode(KiriMotoActionItem item)
+		{
+			bool bRemoved = false;
+			string content = "";
+			int count = 0;
+			int currentLineIndex = 0;
+			int index = 0;
+			string filename = "";
+			string filenameOnly = "";
+			int lineCount = 0;
+			int lineIndex = 0;
+			List<string> lines = new List<string>();
+			int percentage = 0;
+			GCodeProcessor processor = null;
+			int removalIndex = 0;
+			float safeHeight = 0f;
+			List<string> sourceLines = null;
+			GCodeVectorItem vector = null;
+			int vectorCount = 0;
+			int vectorIndex = 0;
+			List<GCodeVectorItem> vectors = null;
+
+			if(item != null &&
+				CheckElements(item,
+					ActionElementEnum.InputFilename | ActionElementEnum.OutputFilename))
+			{
+				using(FileStream reader = File.OpenRead(item.InputFiles[0].FullName))
+				{
+					processor = GCodeProcessor.Parse(reader);
+				}
+				if(processor != null)
+				{
+					Trace.WriteLine("Please wait. Processing redundant tracks...",
+						$"{MessageImportanceEnum.Info}");
+					vectors = processor.GetRedundantTracks();
+					if(vectors.Count > 0)
+					{
+						Trace.WriteLine(
+							$"{vectors.Count} redundant tracks found.",
+							$"{MessageImportanceEnum.Info}");
+						percentage =
+							(int)(((float)vectors.Count / (float)processor.Vectors.Count) *
+								100f);
+						Trace.WriteLine(
+							$"This file containts {percentage}% wasted effort.",
+							$"{MessageImportanceEnum.Info}");
+						Trace.WriteLine("Composing new file...",
+							$"{MessageImportanceEnum.Info}");
+						foreach(GCodeVectorItem vectorItem in vectors)
+						{
+							vectorItem.Selected = true;
+						}
+						vectors = processor.Vectors;
+						vectorCount = vectors.Count;
+						safeHeight = processor.SafeHeight;
+						sourceLines = processor.Lines;
+						for(vectorIndex = 0; vectorIndex < vectorCount; vectorIndex ++)
+						{
+							vector = vectors[vectorIndex];
+							currentLineIndex = vector.Action.LineItem.LineIndex;
+							while(lineIndex < currentLineIndex)
+							{
+								lines.Add(sourceLines[lineIndex]);
+								lineIndex++;
+							}
+							if(vector.Selected)
+							{
+								//	This item will be removed.
+								bRemoved = true;
+							}
+							else if(bRemoved)
+							{
+								lines.Add($"G0 Z{safeHeight:0.###}");
+								lines.Add(
+									$"G0 X{vector.Vertex.X:0.###} Y{vector.Vertex.Y:0.###}");
+								lines.Add($"G1 Z{vector.Vertex.Z:0.###}");
+								bRemoved = false;
+							}
+							else
+							{
+								lines.Add(sourceLines[lineIndex]);
+							}
+							lineIndex ++;
+						}
+					}
+					else
+					{
+						lines.AddRange(processor.Lines);
+					}
+					content = string.Join("\r\n", lines);
+					filename = ActionEngineUtil.AbsolutePath(item.WorkingPath,
+						item.OutputFilename);
+					filenameOnly = Path.GetFileName(filename);
+					try
+					{
+						File.WriteAllText(filename, content);
+						Trace.WriteLine($"File written: {filenameOnly}",
+							$"{MessageImportanceEnum.Info}");
+					}
+					catch(Exception ex)
+					{
+						Trace.WriteLine(
+							$"Error saving file ({filenameOnly}): {ex.Message}",
+							$"{MessageImportanceEnum.Err}");
+					}
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//* Outline																																*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -585,7 +714,7 @@ namespace KiriMotoTools
 		/// <param name="item">
 		/// Reference to the action item containing processing information.
 		/// </param>
-		private void Outline(KiriMotoActionItem item)
+		private static void Outline(KiriMotoActionItem item)
 		{
 			dynamic json = null;
 			dynamic newOp = null;
@@ -683,6 +812,7 @@ namespace KiriMotoTools
 		private static void ReportGCodeOverLap(KiriMotoActionItem item)
 		{
 			int index = 0;
+			int percentage = 0;
 			GCodeProcessor processor = null;
 			List<GCodeVectorItem> vectors = null;
 
@@ -699,21 +829,27 @@ namespace KiriMotoTools
 						$"{MessageImportanceEnum.Info}");
 					vectors = processor.GetRedundantTracks();
 					Trace.WriteLine(
-						$"{vectors.Count} redundant tracks found at the following lines:",
+						$"{vectors.Count} redundant tracks found.",
 						$"{MessageImportanceEnum.Info}");
-					foreach(GCodeVectorItem vectorItem in vectors)
-					{
-						if(index > 0 && vectorItem.Action != null &&
-							vectorItem.Action.Line != null)
-						{
-							Trace.Write(',');
-						}
-						if(vectorItem.Action != null && vectorItem.Action.Line != null)
-						{
-							Trace.Write(vectorItem.Action.Line.LineIndex.ToString());
-						}
-						index++;
-					}
+					percentage =
+						(int)(((float)vectors.Count / (float)processor.Vectors.Count) *
+							100f);
+					Trace.WriteLine(
+						$"This file containts {percentage}% wasted effort.",
+						$"{MessageImportanceEnum.Info}");
+					//foreach(GCodeVectorItem vectorItem in vectors)
+					//{
+					//	if(index > 0 && vectorItem.Action != null &&
+					//		vectorItem.Action.Line != null)
+					//	{
+					//		Trace.Write(',');
+					//	}
+					//	if(vectorItem.Action != null && vectorItem.Action.Line != null)
+					//	{
+					//		Trace.Write(vectorItem.Action.Line.LineIndex.ToString());
+					//	}
+					//	index++;
+					//}
 					Trace.WriteLine("");
 				}
 			}
@@ -776,6 +912,9 @@ namespace KiriMotoTools
 					break;
 				case "createcamproject":
 					CreateCAMProject(this);
+					break;
+				case "optimizegcode":
+					OptimizeGCode(this);
 					break;
 				case "outline":
 					Outline(this);

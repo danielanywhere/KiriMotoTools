@@ -127,11 +127,29 @@ namespace KiriMotoTools {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to (?i:Safe\s*Height\s*\:\s*(?&lt;height&gt;\d+(\.\d+){0,1})).
+        /// </summary>
+        internal static string rxSafeHeight {
+            get {
+                return ResourceManager.GetString("rxSafeHeight", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to (?s:(?i:outer\s+loop\s+vertex\s+(?&lt;x&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+(?&lt;y&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+(?&lt;z&gt;-{0,1}[0-9]+(\.[0-9]+){0,1})\s+)).
         /// </summary>
         internal static string rxStlVector {
             get {
                 return ResourceManager.GetString("rxStlVector", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to (?i:change\s+tool\s+to\s*&apos;[^0-9]*(?&lt;diameter&gt;\d+(\.\d+){0,1})).
+        /// </summary>
+        internal static string rxToolDiameter {
+            get {
+                return ResourceManager.GetString("rxToolDiameter", resourceCulture);
             }
         }
         

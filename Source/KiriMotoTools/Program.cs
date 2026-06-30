@@ -74,9 +74,10 @@ namespace KiriMotoTools
 			{
 				"AutoPocket",
 				"CreateCAMProject",
+				"OptimizeGCode",
+				"Outline",
 				"ReportGCodeOverlap",
-				"TaskList",
-				"Outline"
+				"TaskList"
 			});
 
 			prg.mActionItem = new KiriMotoActionItem();

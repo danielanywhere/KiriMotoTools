@@ -22,7 +22,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Clipper2Lib;
 using Geometry;
 
 namespace KiriMotoTools
@@ -38,12 +37,6 @@ namespace KiriMotoTools
 		//*************************************************************************
 		//*	Private																																*
 		//*************************************************************************
-		/// <summary>
-		/// The multiplier used to convert the natural floating point vertex to
-		/// an integer for conversion to Minkowsky sums.
-		/// </summary>
-		private const double mMinkowskiMultiplier = 10000d;
-
 		//*************************************************************************
 		//*	Protected																															*
 		//*************************************************************************
@@ -75,11 +68,9 @@ namespace KiriMotoTools
 		public GCodeVectorItem Add(GCodeActionItem action, FVector3 vertex,
 			bool penDown, float toolDiameter)
 		{
-			Path64 pattern = null;
 			GCodeVectorItem previous = null;
 			GCodeVectorItem result = new GCodeVectorItem();
 			double toolRadius = 0d;
-			Path64 track = null;
 
 			if(vertex != null)
 			{
@@ -95,20 +86,47 @@ namespace KiriMotoTools
 				if(result.PenDown && previous?.PenDown == true)
 				{
 					toolRadius = (double)(result.ToolDiameter / 2);
-					pattern = Clipper.Ellipse(new Point64(0, 0), toolRadius, toolRadius);
-					track = new Path64()
-					{
-						new Point64(
-							(double)previous.Vertex.X * mMinkowskiMultiplier,
-							(double)previous.Vertex.Y * mMinkowskiMultiplier),
-						new Point64(
-							(double)result.Vertex.X * mMinkowskiMultiplier,
-							(double)result.Vertex.Y * mMinkowskiMultiplier)
-					};
-					result.Minkowski = Clipper.MinkowskiSum(pattern, track, true);
 				}
 			}
 			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	InitializeVoxels																											*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Initialize the voxels in the caller's collection.
+		/// </summary>
+		/// <param name="vectors">
+		/// Reference to the collection of vectors whose voxels will be
+		/// initialized.
+		/// </param>
+		public static void InitializeVoxels(List<GCodeVectorItem> vectors)
+		{
+			float multiplier = 0f;
+			FVector3 vertex = null;
+
+			if(vectors?.Count > 0)
+			{
+				if(GCodeVectorItem.VoxelPrecision != 0f)
+				{
+					multiplier = 1f / GCodeVectorItem.VoxelPrecision;
+				}
+				foreach(GCodeVectorItem vectorItem in vectors)
+				{
+					vertex = vectorItem.Vertex;
+					if(vertex != null)
+					{
+						vectorItem.Voxel = new IVector3()
+						{
+							X = (int)Math.Ceiling(vertex.X * multiplier),
+							Y = (int)Math.Ceiling(vertex.Y * multiplier),
+							Z = (int)Math.Ceiling(vertex.Z * multiplier)
+						};
+					}
+				}
+			}
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -146,24 +164,6 @@ namespace KiriMotoTools
 		{
 			get { return mAction; }
 			set { mAction = value; }
-		}
-		//*-----------------------------------------------------------------------*
-
-		//*-----------------------------------------------------------------------*
-		//*	Minkowski																															*
-		//*-----------------------------------------------------------------------*
-		/// <summary>
-		/// Private member for <see cref="Minkowski">Minkowski</see>.
-		/// </summary>
-		private Paths64 mMinkowski = null;
-		/// <summary>
-		/// Get/Set a reference to the pill-shaped Minkowski between this vertex
-		/// and the previous one.
-		/// </summary>
-		public Paths64 Minkowski
-		{
-			get { return mMinkowski; }
-			set { mMinkowski = value; }
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -233,6 +233,40 @@ namespace KiriMotoTools
 		{
 			get { return mVertex; }
 			set { mVertex = value; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	Voxel																																	*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="Voxel">Voxel</see>.
+		/// </summary>
+		private IVector3 mVoxel = new IVector3();
+		/// <summary>
+		/// Get/Set a reference to the voxel at this vertex.
+		/// </summary>
+		public IVector3 Voxel
+		{
+			get { return mVoxel; }
+			set { mVoxel = value; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	VoxelPrecision																												*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="VoxelPrecision">VoxelPrecision</see>.
+		/// </summary>
+		private static float mVoxelPrecision = 0.1f;
+		/// <summary>
+		/// Get/Set the size of an individual voxel in this session.
+		/// </summary>
+		public static float VoxelPrecision
+		{
+			get { return mVoxelPrecision; }
+			set { mVoxelPrecision = value; }
 		}
 		//*-----------------------------------------------------------------------*
 

@@ -170,40 +170,6 @@ namespace KiriMotoTools
 		}
 		//*-----------------------------------------------------------------------*
 
-		////*-----------------------------------------------------------------------*
-		////*	ActionName																														*
-		////*-----------------------------------------------------------------------*
-		///// <summary>
-		///// Private member for <see cref="ActionName">ActionName</see>.
-		///// </summary>
-		//private string mActionName = "";
-		///// <summary>
-		///// Get/Set the current command action name (G or M).
-		///// </summary>
-		//public string ActionName
-		//{
-		//	get { return mActionName; }
-		//	set { mActionName = value; }
-		//}
-		////*-----------------------------------------------------------------------*
-
-		////*-----------------------------------------------------------------------*
-		////*	ActionIndex																														*
-		////*-----------------------------------------------------------------------*
-		///// <summary>
-		///// Private member for <see cref="ActionIndex">ActionIndex</see>.
-		///// </summary>
-		//private int mActionIndex = 0;
-		///// <summary>
-		///// Get/Set the current action index.
-		///// </summary>
-		//public int ActionIndex
-		//{
-		//	get { return mActionIndex; }
-		//	set { mActionIndex = value; }
-		//}
-		////*-----------------------------------------------------------------------*
-
 		//*-----------------------------------------------------------------------*
 		//*	Capture																																*
 		//*-----------------------------------------------------------------------*
@@ -275,19 +241,19 @@ namespace KiriMotoTools
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
-		//*	Line																																	*
+		//*	LineItem																															*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
-		/// Private member for <see cref="Line">Line</see>.
+		/// Private member for <see cref="LineItem">LineItem</see>.
 		/// </summary>
-		private GCodeLineItem mLine = null;
+		private GCodeLineItem mLineItem = null;
 		/// <summary>
 		/// Get/Set a reference to the currently active g-code line.
 		/// </summary>
-		public GCodeLineItem Line
+		public GCodeLineItem LineItem
 		{
-			get { return mLine; }
-			set { mLine = value; }
+			get { return mLineItem; }
+			set { mLineItem = value; }
 		}
 		//*-----------------------------------------------------------------------*
 
@@ -352,6 +318,23 @@ namespace KiriMotoTools
 				}
 				PositionUpdated();
 			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	SafeHeight																														*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="SafeHeight">SafeHeight</see>.
+		/// </summary>
+		private float mSafeHeight = 1f;
+		/// <summary>
+		/// Get/Set the safe height of the tool above the stock.
+		/// </summary>
+		public float SafeHeight
+		{
+			get { return mSafeHeight; }
+			set { mSafeHeight = value; }
 		}
 		//*-----------------------------------------------------------------------*
 

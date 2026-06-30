@@ -1,0 +1,1 @@
+kirimototools /wait /action:reportgcodeoverlap /infile:C:\Temp\MyGCodeFile.nc

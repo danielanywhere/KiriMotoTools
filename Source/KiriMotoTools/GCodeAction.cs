@@ -137,19 +137,19 @@ namespace KiriMotoTools
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
-		//*	Line																																	*
+		//*	LineItem																															*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
-		/// Private member for <see cref="Line">Line</see>.
+		/// Private member for <see cref="LineItem">LineItem</see>.
 		/// </summary>
-		private GCodeLineItem mLine = null;
+		private GCodeLineItem mLineItem = null;
 		/// <summary>
-		/// Get/Set the raw line from which this action was created.
+		/// Get/Set a reference to the raw line from which this action was created.
 		/// </summary>
-		public GCodeLineItem Line
+		public GCodeLineItem LineItem
 		{
-			get { return mLine; }
-			set { mLine = value; }
+			get { return mLineItem; }
+			set { mLineItem = value; }
 		}
 		//*-----------------------------------------------------------------------*
 
