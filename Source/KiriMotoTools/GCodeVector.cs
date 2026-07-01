@@ -259,7 +259,8 @@ namespace KiriMotoTools
 		/// <summary>
 		/// Private member for <see cref="VoxelPrecision">VoxelPrecision</see>.
 		/// </summary>
-		private static float mVoxelPrecision = 0.1f;
+		private static float mVoxelPrecision = 0.25f;
+		//private static float mVoxelPrecision = 0.5f;
 		/// <summary>
 		/// Get/Set the size of an individual voxel in this session.
 		/// </summary>

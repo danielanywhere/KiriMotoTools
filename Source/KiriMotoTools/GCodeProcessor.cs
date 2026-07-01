@@ -166,7 +166,10 @@ namespace KiriMotoTools
 							switch(cursor.Action.ActionIndex)
 							{
 								case 0:
-								//	Program stop / mandatory pause.
+									//	Program stop / mandatory pause.
+									mToolChanges.Add(cursor.Action.LineItem.LineIndex);
+									cursor.Action = null;
+									break;
 								case 1:
 								//	Optional stop.
 								case 2:
@@ -189,6 +192,7 @@ namespace KiriMotoTools
 									//		ActionEngineUtil.GetValue(
 									//			cursor.Comment, ResourceMain.rxNumeric, "numeric"));
 									//}
+									mToolChanges.Add(cursor.Action.LineItem.LineIndex);
 									cursor.Action = null;
 									break;
 								case 7:
@@ -265,6 +269,7 @@ namespace KiriMotoTools
 			int distX = 0;
 			int distY = 0;
 			int distZ = 0;
+			int z = 0;
 
 			if(start != null && end != null)
 			{
@@ -280,12 +285,17 @@ namespace KiriMotoTools
 				{
 					for(index = 0; index <= distance; index++)
 					{
-						result.Add(new IVector3()
+						//	Only paths under the surface of the stock are counted.
+						z = start.Z + ((index * distZ) / distance);
+						if(z < 1)
 						{
-							X = start.X + ((index * distX) / distance),
-							Y = start.Y + ((index * distY) / distance),
-							Z = start.Z + ((index * distZ) / distance)
-						});
+							result.Add(new IVector3()
+							{
+								X = start.X + ((index * distX) / distance),
+								Y = start.Y + ((index * distY) / distance),
+								Z = start.Z + ((index * distZ) / distance)
+							});
+						}
 					}
 				}
 				else
@@ -364,6 +374,67 @@ namespace KiriMotoTools
 		//*	Public																																*
 		//*************************************************************************
 		//*-----------------------------------------------------------------------*
+		//* AddTrack																															*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Add the voxels of a track between two points.
+		/// </summary>
+		/// <param name="occupied">
+		/// Reference to the currently occupied voxel space.
+		/// </param>
+		/// <param name="start">
+		/// The start of the line.
+		/// </param>
+		/// <param name="end">
+		/// The end of the line.
+		/// </param>
+		public void AddTrack(HashSet<VoxelKey> occupied,
+			float toolDiameter, IVector3 start, IVector3 end)
+		{
+			HashSet<VoxelKey> localKeys = null;
+			List<IVector3> pathPoints = null;
+			VoxelToolLookupItem toolLookup = null;
+			VoxelKey visitKey;
+			int z = 0;
+
+			if(occupied != null && toolDiameter > 0f &&
+				start != null && end != null)
+			{
+				localKeys = new HashSet<VoxelKey>();
+				pathPoints = InterpolatePath(start, end);
+				toolLookup = mVoxelToolLookups.GetToolLookup(
+					MillTypeEnum.End, toolDiameter);
+				foreach(IVector3 pointItem in pathPoints)
+				{
+					foreach(IVector3 offsetItem in toolLookup.RelativeVoxels)
+					{
+						z = pointItem.Z + offsetItem.Z;
+						if(z < 1)
+						{
+							//	Only process locations within the stock.
+							visitKey = new VoxelKey(
+								pointItem.X + offsetItem.X,
+								pointItem.Y + offsetItem.Y,
+								z);
+							if(!localKeys.Contains(visitKey))
+							{
+								localKeys.Add(visitKey);
+							}
+						}
+					}
+				}
+				foreach(VoxelKey localKeyItem in localKeys)
+				{
+					if(!occupied.Contains(localKeyItem))
+					{
+						occupied.Add(localKeyItem);
+					}
+				}
+			}
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//* GetRedundantTracks																										*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -375,74 +446,97 @@ namespace KiriMotoTools
 		/// </returns>
 		public List<GCodeVectorItem> GetRedundantTracks()
 		{
-			float multiplier = 0f;
+			//List<int> depths = new List<int>();
+			HashSet<VoxelKey> localKeys = new HashSet<VoxelKey>();
+			float multiplier = (GCodeVectorItem.VoxelPrecision != 0f ?
+				1f / GCodeVectorItem.VoxelPrecision : 0f);
 			int occupiedCount = 0;
 			HashSet<VoxelKey> occupiedKeys = new HashSet<VoxelKey>();
-			int offsetX = 0;
-			int offsetY = 0;
-			int offsetZ = 0;
 			List<IVector3> pathPoints = null;
 			IVector3 previousVoxel = null;
 			List<GCodeVectorItem> result = new List<GCodeVectorItem>();
-			int toolRadius = 0;
+			List<int> toolIndices = new List<int>();
+			VoxelToolLookupItem toolLookup = null;
+			//int toolDiameter = 0;
 			int visitCount = 0;
 			VoxelKey visitKey;
+			int z = 0;
 
-			if(GCodeVectorItem.VoxelPrecision != 0f)
-			{
-				multiplier = 1f / GCodeVectorItem.VoxelPrecision;
-			}
 			foreach(GCodeVectorItem vectoritem in mVectors)
 			{
+				if(vectoritem.Vertex.X == 24.4307f &&
+					vectoritem.Vertex.Y == 26.0376f)
+				{
+					Debug.WriteLine("GetRedundantTracks. Break here...");
+				}
+				//toolDiameter =
+				//	(int)Math.Ceiling((vectoritem.ToolDiameter * multiplier));
+				//if(previousVoxel != null && vectoritem.PenDown &&
+				//	previousVoxel.Z == vectoritem.Voxel.Z &&
+				//	Math.Abs(IVector3.Magnitude(previousVoxel) -
+				//		IVector3.Magnitude(vectoritem.Voxel)) > toolDiameter)
 				if(previousVoxel != null && vectoritem.PenDown)
 				{
-					toolRadius =
-						(int)Math.Ceiling((vectoritem.ToolDiameter * multiplier) / 2f);
+					localKeys.Clear();
 					pathPoints = InterpolatePath(previousVoxel, vectoritem.Voxel);
-					occupiedCount = 0;
-					visitCount = 0;
+					toolLookup = mVoxelToolLookups.GetToolLookup(
+						MillTypeEnum.End, vectoritem.ToolDiameter);
 					foreach(IVector3 pointItem in pathPoints)
 					{
-						for(offsetX = -toolRadius; offsetX <= toolRadius; offsetX++)
+						foreach(IVector3 offsetItem in toolLookup.RelativeVoxels)
 						{
-							for(offsetY = -toolRadius; offsetY <= toolRadius; offsetY++)
+							z = pointItem.Z + offsetItem.Z;
+							if(z < 1)
 							{
-								//for(offsetZ = 0; offsetZ <= toolRadius; offsetZ++)
-								//{
-									if((offsetX * offsetX) +
-										(offsetY * offsetY) +
-										(offsetZ * offsetZ) <= (toolRadius * toolRadius))
-									{
-										visitCount++;
-										visitKey = new VoxelKey(
-											pointItem.X + offsetX,
-											pointItem.Y + offsetY,
-											pointItem.Z + offsetZ);
-										if(occupiedKeys.Contains(visitKey))
-										{
-											occupiedCount++;
-										}
-										else
-										{
-											occupiedKeys.Add(visitKey);
-										}
-									}
-								//}
+								//	Only process locations within the stock.
+								visitKey = new VoxelKey(
+									pointItem.X + offsetItem.X,
+									pointItem.Y + offsetItem.Y,
+									z);
+								if(!localKeys.Contains(visitKey))
+								{
+									localKeys.Add(visitKey);
+								}
 							}
 						}
 					}
+					visitCount = 0;
+					occupiedCount = 0;
+					foreach(VoxelKey localKeyItem in localKeys)
+					{
+						visitCount++;
+						if(occupiedKeys.Contains(localKeyItem))
+						{
+							occupiedCount++;
+						}
+						else
+						{
+							occupiedKeys.Add(localKeyItem);
+						}
+					}
 					//if(visitCount > 0 &&
-					//	((float)occupiedCount / (float)visitCount) > 0.9f)
+					//	((float)occupiedCount / (float)visitCount) > 0.95f)
 					//{
-					//	//	This track is completely redundant.
+					//	//	This track is mostly redundant.
 					//	result.Add(vectoritem);
 					//}
-					if(visitCount > 0 && occupiedCount == visitCount)
+					if(visitCount > 0 && occupiedCount == visitCount &&
+						previousVoxel.Z == vectoritem.Voxel.Z &&
+						vectoritem.Voxel.Z < 1 &&
+						mToolChanges.Count > 1 &&
+						vectoritem.Action.LineItem.LineIndex > mToolChanges[1])
 					{
 						//	This track is completely redundant.
 						result.Add(vectoritem);
 					}
 				}
+				//if(previousVoxel != null &&
+				//	previousVoxel.Z != vectoritem.Voxel.Z &&
+				//	!depths.Contains(vectoritem.Voxel.Z))
+				//{
+				//	//	A new depth has been processed.
+				//	depths.Add(vectoritem.Voxel.Z);
+				//}
 				previousVoxel = vectoritem.Voxel;
 			}
 			return result;
@@ -661,6 +755,130 @@ namespace KiriMotoTools
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//*	ToolChanges																														*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="ToolChanges">ToolChanges</see>.
+		/// </summary>
+		private List<int> mToolChanges = new List<int>();
+		/// <summary>
+		/// Get a reference to the list of tool change indices.
+		/// </summary>
+		public List<int> ToolChanges
+		{
+			get { return mToolChanges; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* TrackIsOccupied																												*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return a value indicating whether the track between two points is
+		/// completely occupied.
+		/// </summary>
+		/// <param name="occupied">
+		/// Reference to the currently occupied voxel space.
+		/// </param>
+		/// <param name="start">
+		/// The start of the line.
+		/// </param>
+		/// <param name="end">
+		/// The end of the line.
+		/// </param>
+		/// <returns>
+		/// True if the track occurs completely within occupied space. Otherwise,
+		/// false.
+		/// </returns>
+		public bool TrackIsOccupied(HashSet<VoxelKey> occupied,
+			float toolDiameter, IVector3 start, IVector3 end)
+		{
+			return TrackOccupation(occupied, toolDiameter, start, end) == 1f;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* TrackOccupation																												*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return the portion of the specified track running through occupied
+		/// space, between 0.0 and 1.0.
+		/// </summary>
+		/// <param name="occupied">
+		/// Reference to the currently occupied voxel space.
+		/// </param>
+		/// <param name="start">
+		/// The start of the line.
+		/// </param>
+		/// <param name="end">
+		/// The end of the line.
+		/// </param>
+		/// <returns>
+		/// A value between 0.0 and 1.0 indicating the ratio of the supplied track
+		/// runs through occupied space.
+		/// </returns>
+		public float TrackOccupation(HashSet<VoxelKey> occupied,
+			float toolDiameter, IVector3 start, IVector3 end)
+		{
+			HashSet<VoxelKey> localKeys = null;
+			int occupiedCount = 0;
+			List<IVector3> pathPoints = null;
+			float result = 0f;
+			VoxelToolLookupItem toolLookup = null;
+			int visitCount = 0;
+			VoxelKey visitKey;
+			int z = 0;
+
+			if(occupied?.Count > 0 && toolDiameter > 0f &&
+				start != null && end != null)
+			{
+				localKeys = new HashSet<VoxelKey>();
+				pathPoints = InterpolatePath(start, end);
+				toolLookup = mVoxelToolLookups.GetToolLookup(
+					MillTypeEnum.End, toolDiameter);
+				foreach(IVector3 pointItem in pathPoints)
+				{
+					foreach(IVector3 offsetItem in toolLookup.RelativeVoxels)
+					{
+						z = pointItem.Z + offsetItem.Z;
+						if(z < 1)
+						{
+							//	Only process locations within the stock.
+							visitKey = new VoxelKey(
+								pointItem.X + offsetItem.X,
+								pointItem.Y + offsetItem.Y,
+								z);
+							if(!localKeys.Contains(visitKey))
+							{
+								localKeys.Add(visitKey);
+							}
+						}
+					}
+				}
+				visitCount = 0;
+				occupiedCount = 0;
+				foreach(VoxelKey localKeyItem in localKeys)
+				{
+					visitCount++;
+					if(occupied.Contains(localKeyItem))
+					{
+						occupiedCount++;
+					}
+					else
+					{
+						occupied.Add(localKeyItem);
+					}
+				}
+				if(visitCount > 0)
+				{
+					result = (float)occupiedCount / (float)visitCount;
+				}
+			}
+			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//*	Vectors																																*
 		//*-----------------------------------------------------------------------*
 		/// <summary>
@@ -673,6 +891,23 @@ namespace KiriMotoTools
 		public GCodeVectorCollection Vectors
 		{
 			get { return mVectors; }
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//*	VoxelToolLookups																											*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Private member for <see cref="VoxelToolLookups">VoxelToolLookups</see>.
+		/// </summary>
+		private VoxelToolLookupCollection mVoxelToolLookups =
+			new VoxelToolLookupCollection();
+		/// <summary>
+		/// Get a reference to the collection of tool lookups for this session.
+		/// </summary>
+		public VoxelToolLookupCollection VoxelToolLookups
+		{
+			get { return mVoxelToolLookups; }
 		}
 		//*-----------------------------------------------------------------------*
 

@@ -47,6 +47,49 @@ namespace KiriMotoTools
 		//*-----------------------------------------------------------------------*
 
 		//*-----------------------------------------------------------------------*
+		//* Magnitude																															*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return the magnitude of the provided vector.
+		/// </summary>
+		/// <param name="value">
+		/// Reference to the vector to inspect.
+		/// </param>
+		/// <returns>
+		/// The magnitude of the vector.
+		/// </returns>
+		public static int Magnitude(IVector3 value)
+		{
+			int result = 0;
+
+			if(value != null)
+			{
+				result = (int)Math.Sqrt(
+					(double)(value.mX * value.mX) +
+					(double)(value.mY * value.mY) +
+					(double)(value.mZ * value.mZ)
+					);
+			}
+			return result;
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
+		//* ToString																															*
+		//*-----------------------------------------------------------------------*
+		/// <summary>
+		/// Return the string representation of this object.
+		/// </summary>
+		/// <returns>
+		/// The string representation of this object.
+		/// </returns>
+		public override string ToString()
+		{
+			return $"X:{mX:0.###};Y:{mY:0.###};Z:{mZ:0.###}";
+		}
+		//*-----------------------------------------------------------------------*
+
+		//*-----------------------------------------------------------------------*
 		//*	X																																			*
 		//*-----------------------------------------------------------------------*
 		/// <summary>

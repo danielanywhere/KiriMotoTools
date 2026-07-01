@@ -607,6 +607,7 @@ namespace KiriMotoTools
 			int lineCount = 0;
 			int lineIndex = 0;
 			List<string> lines = new List<string>();
+			HashSet<VoxelKey> occupied = null;
 			int percentage = 0;
 			GCodeProcessor processor = null;
 			int removalIndex = 0;
@@ -615,6 +616,7 @@ namespace KiriMotoTools
 			GCodeVectorItem vector = null;
 			int vectorCount = 0;
 			int vectorIndex = 0;
+			GCodeVectorItem vectorPrevious = null;
 			List<GCodeVectorItem> vectors = null;
 
 			if(item != null &&
@@ -625,6 +627,39 @@ namespace KiriMotoTools
 				{
 					processor = GCodeProcessor.Parse(reader);
 				}
+				////	*** TEST ***
+				//sourceLines = new List<string>()
+				//{
+				//	"G21 ; set units to MM(required)\r\n",
+				//	"G90; absolute position mode(required)\r\n",
+				//	"M6 ;change tool to 'ball 1mm'.\r\n",
+				//	"G0 X3.528 Y7.108 Z1\r\n",
+				//	"G1 Z0\r\n",
+				//	"G1 X7.987 Y6.015\r\n",
+				//	"G1 X18.943 Y8.329\r\n",
+				//	"G1 X17.327 Y15.565\r\n",
+				//	"G1 X21.554 Y20.672\r\n",
+				//	"G1 X15.949 Y24.337\r\n",
+				//	"G1 X5.375 Y22.087\r\n",
+				//	"G1 X9.818 Y17.640\r\n",
+				//	"G1 X3.528 Y7.108\r\n",
+				//	"M6 ; change tool to 'ball 1mm'.\r\n",
+				//	"G0 Z1\r\n",
+				//	"G0 X5.194 Y7.790\r\n",
+				//	"G1 Z0\r\n",
+				//	"G1 X8.257 Y7.197\r\n",
+				//	"G1 X18.943 Y8.329\r\n",
+				//	"G1 X17.327 Y15.565\r\n",
+				//	"G1 X20.618 Y19.541\r\n",
+				//	"G1 X15.454 Y23.155\r\n",
+				//	"G1 X6.484 Y20.977\r\n",
+				//	"G1 X9.818 Y17.640\r\n",
+				//	"G1 X5.194 Y7.790\r\n",
+				//	"G0 Z1\r\n",
+				//	"G0 X0 Y0\r\n"
+				//};
+				//processor = GCodeProcessor.Parse(string.Join("", sourceLines));
+				////	/*** TEST ***
 				if(processor != null)
 				{
 					Trace.WriteLine("Please wait. Processing redundant tracks...",
@@ -651,9 +686,15 @@ namespace KiriMotoTools
 						vectorCount = vectors.Count;
 						safeHeight = processor.SafeHeight;
 						sourceLines = processor.Lines;
+						occupied = new HashSet<VoxelKey>();
 						for(vectorIndex = 0; vectorIndex < vectorCount; vectorIndex ++)
 						{
 							vector = vectors[vectorIndex];
+							if(vectorPrevious != null &&
+								vector.Vertex.Z != vectorPrevious.Vertex.Z)
+							{
+								vectorPrevious = null;
+							}
 							currentLineIndex = vector.Action.LineItem.LineIndex;
 							while(lineIndex < currentLineIndex)
 							{
@@ -667,17 +708,55 @@ namespace KiriMotoTools
 							}
 							else if(bRemoved)
 							{
-								lines.Add($"G0 Z{safeHeight:0.###}");
-								lines.Add(
-									$"G0 X{vector.Vertex.X:0.###} Y{vector.Vertex.Y:0.###}");
-								lines.Add($"G1 Z{vector.Vertex.Z:0.###}");
+								if(vectorPrevious != null &&
+									processor.TrackOccupation(occupied, vector.ToolDiameter,
+									vectorPrevious.Voxel, vector.Voxel) > 0.5f)
+								{
+									//	Move directly to next vertex.
+									lines.Add(
+										$"G1 X{vector.Vertex.X:0.###} Y{vector.Vertex.Y:0.###}");
+									lines.Add($"G1 Z{vector.Vertex.Z:0.###}");
+								}
+								else
+								{
+									//	Retract, reposition, plunge.
+									lines.Add($"G0 Z{safeHeight:0.###}");
+									lines.Add(
+										$"G0 X{vector.Vertex.X:0.###} Y{vector.Vertex.Y:0.###}");
+									lines.Add($"G1 Z{vector.Vertex.Z:0.###}");
+								}
+								if(vectorPrevious != null)
+								{
+									processor.AddTrack(occupied, vector.ToolDiameter,
+										vectorPrevious.Voxel, vector.Voxel);
+								}
+								else
+								{
+									processor.AddTrack(occupied, vector.ToolDiameter,
+										vector.Voxel, vector.Voxel);
+								}
 								bRemoved = false;
 							}
 							else
 							{
+								if(vectorPrevious != null)
+								{
+									processor.AddTrack(occupied, vector.ToolDiameter,
+										vectorPrevious.Voxel, vector.Voxel);
+								}
 								lines.Add(sourceLines[lineIndex]);
 							}
 							lineIndex ++;
+							if(vectorPrevious != null &&
+								vector.PenDown && vectorPrevious.PenDown &&
+								vector.Vertex.Z == vectorPrevious.Vertex.Z)
+							{
+								vectorPrevious = vector;
+							}
+							else
+							{
+								vectorPrevious = null;
+							}
 						}
 					}
 					else
